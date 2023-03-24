@@ -1,5 +1,5 @@
 <template>
-  <div>this is home view</div>
+  <div>this is Settings view</div>
 </template>
 
 <script>

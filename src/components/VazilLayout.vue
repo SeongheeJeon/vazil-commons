@@ -194,28 +194,47 @@
     <!-- nav -->
     <v-navigation-drawer
       app
-      expand-on-hover
-      rail
+      :rail="rail"
+      rail-width="50"
     >
-      <v-list>
-        <v-list-item
-          v-for="(item, i) in navList"
-          :key="i"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          :to="item.to"
-        />
-        <v-list-item
-          @click="exitDashboard"
-          prepend-icon="mdi-logout"
-          title="Exit"
-        />
-      </v-list>
+      <v-row class="nav-container" no-gutters>
+        <!-- nav list -->
+        <v-col :style="`justify-content: ${navItemPosition}`">
+          <v-btn
+            v-for="(item, index) in navList"
+            :key="index"
+            variant="plain"
+            :ripple="false"
+            class="nav-item"
+            :class="selectedNav === item.key ? 'selected' : ''"
+            :to="item.to"
+            @click="selectNavItem(item)"
+          >
+            <v-icon>{{item.icon}}</v-icon>
+            <span>{{item.title}}</span>
+          </v-btn>
+          
+          <v-btn
+            v-show="$slots[`navExpand_${selectedNav}`]"
+            variant="plain"
+            :ripple="false"
+            class="nav-item"
+            @click="changeRail"
+          >
+            <v-icon>mdi-chevron-double-{{rail ? 'right' : 'left'}}</v-icon>
+          </v-btn>
+        </v-col>
+        
+        <!-- nav expand area -->
+        <v-col class="pa-2" v-if="$slots[`navExpand_${selectedNav}`]">
+          <slot :name="`navExpand_${selectedNav}`" />
+        </v-col>
+      </v-row>
     </v-navigation-drawer>
 
     
     <v-main class="my-layout-main">
-      <v-container>
+      <v-container style="max-width: 100%;">
         <router-view />
       </v-container>
     </v-main>
@@ -223,9 +242,10 @@
 </template>
 
 <script setup>
-import { ref, defineProps, onMounted} from 'vue'
+import { ref, defineProps, onMounted, useSlots} from 'vue'
 import {useTheme} from "vuetify"
 const theme = useTheme()
+const slots = useSlots()
 
 // data
 const headerItemOptions = ref({
@@ -260,6 +280,8 @@ const localeList = ref([
     text: 'English',
   },
 ])
+const rail = ref(true)
+const selectedNav = ref('home')
 
 
 // props
@@ -296,6 +318,10 @@ defineProps({
     type:String,
     default: '이메일'
   },
+  navItemPosition: {
+    type:String,
+    default: 'start'
+  },
   navList:{
     type:Array,
     default: () => [{
@@ -317,7 +343,7 @@ onMounted(() => {
 })
 
 
-// events
+// methods
 const onClickOutsideNotice = () => {
   noticeActive.value = false
 }
@@ -332,8 +358,18 @@ const changeLocale = () => {
   console.log('change locale : not yet implemented')
 }
 
-const exitDashboard = () => {
-  console.log('exit dashboard : not yet implemented')
+const selectNavItem = (item) => {
+  selectedNav.value = item.key
+  
+  if(slots[`navExpand_${selectedNav.value}`]){
+    rail.value = false
+  } else {
+    rail.value = true
+  }
+}
+
+const changeRail = () => {
+  rail.value = !rail.value
 }
 
 </script>
@@ -430,18 +466,64 @@ const exitDashboard = () => {
 
 
   // navigation
-  .v-navigation-drawer {
-    .v-list{
+  &:deep(.v-navigation-drawer) {
+    padding-top: 8px;
+    
+    .nav-container {
       height: 100%;
+      flex-wrap: nowrap;
       
-      &:deep(.v-list-item:last-child) {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
+      .v-col {
+        height: 100%;
+        overflow: hidden;
       }
       
-      &:deep(.v-list-item__prepend) .v-icon {
-        opacity: 1 !important;
+      .v-col:first-child {
+        min-width: 50px;
+        max-width: 50px;
+        padding: 0;
+        border-right: 1px solid rgba(128, 128, 128, 0.3);
+        display: flex;
+        flex-direction: column;
+        
+        .nav-item {
+          padding: 0;
+          min-width: 50px;
+          height: 50px;
+          opacity: 1;
+          border-radius: 0;
+          
+          .v-icon {
+            padding-bottom: 12px;
+            font-size: 20px;
+          }
+          
+          .v-btn__content span {
+            position: absolute;
+            bottom: 6px;
+            font-size: 0.75rem;
+            color: grey;
+          }
+          
+          &:hover, &:hover span {
+            color: rgba(var(--v-theme-primary), 1);
+          }
+          
+          &.selected {
+            background-color: rgba(var(--v-theme-primary), 0.3);
+          }
+          
+          &:last-child {
+            position: absolute;
+            bottom: 0px;
+            left: 0px;
+          }
+        }
+      }
+      
+      .v-col:nth-child(2) {
+        min-width: 205px;
+        max-width: 205px;
       }
     }
   }

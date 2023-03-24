@@ -1,5 +1,5 @@
 <template>
-  <div>this is home view</div>
+  <div>this is Reservation view</div>
 </template>
 
 <script>
