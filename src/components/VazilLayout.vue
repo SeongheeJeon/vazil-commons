@@ -35,7 +35,7 @@
         <HeaderItem
           v-if="headerActiveList.indexOf('theme') > -1"
           icon="mdi-theme-light-dark"
-          @onClick="theme.global.name.value = theme.global.name.value === 'light' ? 'dark' : 'light'"
+          @onClick="changeTheme"
         />
         
         <!-- 언어 -->
@@ -195,12 +195,14 @@
 </template>
 
 <script setup>
-import { ref, defineProps, useSlots} from 'vue'
+import {ref, defineProps, useSlots, onMounted} from 'vue'
 import {useTheme, useDisplay} from "vuetify"
+import {useStore} from 'vuex'
 import HeaderItem from './VazilLayout/HeaderItem.vue'
 
-const theme = useTheme()
 const slots = useSlots()
+const theme = useTheme()
+const store = useStore()
 const {xs, mdAndDown, lgAndUp} = useDisplay()
 
 defineProps({
@@ -252,6 +254,10 @@ defineProps({
       to: '/settings',
     }],
   },
+})
+
+onMounted(() => {
+  theme.global.name.value = store.state.theme
 })
 
 
@@ -318,6 +324,12 @@ const onClickOutsideHeaderMenu = () => {
 }
 const getHeaderMenuBtn = () => {
   return [document.querySelector('.header-menu-btn')]
+}
+
+const changeTheme = () => {
+  const val = theme.global.name.value === 'light' ? 'dark' : 'light' 
+  theme.global.name.value = val
+  store.commit('setTheme', val)
 }
 const changeLocale = () => {
   console.log('change locale : not yet implemented')
