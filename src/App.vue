@@ -1,14 +1,18 @@
 <template>
   <VazilLayout
-    v-bind="props"
+    v-bind="vazilLayoutProps"
+    ref="vazilLayout"
   >
-    <!-- <template #headerItem="props">
-      <v-btn
-        v-bind="props.btnOptions"
-      >
-        <v-icon>mdi-help</v-icon>
-      </v-btn>
-    </template>  -->
+    <template #headerItems>
+      <!-- header item use-case -->
+      <HeaderItem  icon='mdi-plus'>
+        <template #expandContent>
+          <div class="test-content">
+            Expand Area
+          </div>
+        </template>
+      </HeaderItem>
+    </template>
     
     <template #navExpand_home>
       <div>home nav expand</div>
@@ -24,13 +28,16 @@
 
 <script>
 import VazilLayout from './components/VazilLayout.vue'
+import HeaderItem from './components/VazilLayout/HeaderItem.vue'
 
 export default {
   components: {
     VazilLayout,
+    HeaderItem
   },
   data: () => ({
-    props: {
+    testActive:true,
+    vazilLayoutProps: {
       darkThemeLogo: "vridge_02.png",
       lightThemeLogo: "vridge_01.png",
       headerActiveList: ['theme', 'locale', 'notice', 'profile'],
@@ -66,5 +73,11 @@ export default {
 html {
   font-size: 14px !important;
   overflow: auto !important;
+}
+
+.test-content {
+  width: 100px;
+  height: 100px;
+  background-color: yellow;
 }
 </style>
