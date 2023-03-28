@@ -195,17 +195,19 @@
 </template>
 
 <script setup>
-import {ref, defineProps, useSlots, onMounted} from 'vue'
+import {ref, defineProps, useSlots, onMounted, watch} from 'vue'
 import {useTheme, useDisplay} from "vuetify"
+import {useRoute} from 'vue-router'
 import {useStore} from 'vuex'
 import HeaderItem from './VazilLayout/HeaderItem.vue'
 
 const slots = useSlots()
 const theme = useTheme()
+const route = useRoute()
 const store = useStore()
 const {xs, mdAndDown, lgAndUp} = useDisplay()
 
-defineProps({
+const props = defineProps({
   headerHeight:{
     type:[String, Number],
     default: 40,
@@ -259,6 +261,18 @@ defineProps({
 onMounted(() => {
   theme.global.name.value = store.state.theme
 })
+
+watch(
+  route,
+  (to) => {
+    props.navList.forEach(nav => {
+      if(to.path.includes(nav.key)){
+        selectedNav.value = nav.key
+      }
+    })
+  },
+  {deep: true, immediate: true}
+)
 
 
 // header
