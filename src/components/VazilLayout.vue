@@ -47,7 +47,7 @@
             <v-list class="locale-content">
               <v-list-item
                 v-for="(item, index) in localeList" :key="index"
-                @click="changeLocale"
+                @click="changeLocale(item.value)"
               >
                 <span>{{item.text}}</span>
               </v-list-item>
@@ -197,12 +197,15 @@
 import {ref, defineProps, defineEmits, useSlots, onMounted, watch} from 'vue'
 import {useTheme, useDisplay} from "vuetify"
 import {useStore} from 'vuex'
+import {useI18n} from 'vue-i18n'
+
 import HeaderItem from './VazilLayout/HeaderItem.vue'
 
 const slots = useSlots()
 const theme = useTheme()
-const store = useStore()
 const {xs, mdAndDown, lgAndUp} = useDisplay()
+const store = useStore()
+const {locale} = useI18n()
 
 const props = defineProps({
   headerHeight:{
@@ -265,6 +268,9 @@ const emits = defineEmits(['click-nav-item'])
 
 onMounted(() => {
   theme.global.name.value = store.state.theme
+  if(store.state.locale){
+    locale.value = store.state.locale
+  }
 })
 
 
@@ -338,10 +344,10 @@ const changeTheme = () => {
   theme.global.name.value = val
   store.commit('setTheme', val)
 }
-const changeLocale = () => {
-  console.log('change locale : not yet implemented')
+const changeLocale = (val) => {
+  locale.value = val
+  store.commit('setLocale', val)
 }
-
 
 
 // navigation

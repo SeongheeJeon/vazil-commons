@@ -1,5 +1,5 @@
 <template>
-  <div>this is home view</div>
+  <div>{{$t('홈 화면')}}</div>
 </template>
 
 <script>
