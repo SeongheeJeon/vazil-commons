@@ -2,6 +2,7 @@
   <VazilLayout
     v-bind="vazilLayoutProps"
     ref="vazilLayout"
+    @click-nav-item="clickNavItem"
   >
     <template #headerItems>
       <!-- header item use-case -->
@@ -23,6 +24,10 @@
     <template #navExpand_settings>
       <div>settings nav expand</div>
     </template> 
+    
+    <template #default>
+      <router-view />
+    </template> 
   </VazilLayout>
 </template>
 
@@ -35,7 +40,7 @@ export default {
     VazilLayout,
     HeaderItem
   },
-  data: () => ({
+  data(){ return {
     testActive:true,
     vazilLayoutProps: {
       darkThemeLogo: "vridge_02.png",
@@ -47,25 +52,35 @@ export default {
           key: 'home',
           icon: 'mdi-home-outline',
           title: '홈',
-          to: '/',
+          path: '/',
         },{
           key: 'reservation',
           icon: 'mdi-clock-outline',
           title: '예약',
-          to: '/reservation',
-          
+          path: '/reservation',
         },{
           key: 'settings',
           icon: 'mdi-cog-outline',
           title: '설정',
-          to: '/settings',
+          path: '/settings',
         },
       ],
+      loadedNav: '',
       // userAvatar: "logo.png",
       userName: '성희',
       userEmail: 'shj@vazilcompany.com',
+    },
+  }},
+  methods: {
+    clickNavItem(navItem) {
+      this.$router.push(navItem.path)
     }
-  })
+  },
+  watch: {
+    $route(to) {
+      this.vazilLayoutProps.loadedNav = to.path
+    }
+  },
 }
 </script>
 

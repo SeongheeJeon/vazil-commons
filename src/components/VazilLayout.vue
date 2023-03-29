@@ -161,7 +161,6 @@
             :ripple="false"
             class="nav-item"
             :class="selectedNav === item.key ? 'selected' : ''"
-            :to="item.to"
             @click="selectNavItem(item)"
           >
             <v-icon>{{item.icon}}</v-icon>
@@ -188,22 +187,20 @@
 
     <v-main class="my-layout-main">
       <v-container style="max-width: 100%;">
-        <router-view />
+        <slot name="default" />
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import {ref, defineProps, useSlots, onMounted, watch} from 'vue'
+import {ref, defineProps, defineEmits, useSlots, onMounted, watch} from 'vue'
 import {useTheme, useDisplay} from "vuetify"
-import {useRoute} from 'vue-router'
 import {useStore} from 'vuex'
 import HeaderItem from './VazilLayout/HeaderItem.vue'
 
 const slots = useSlots()
 const theme = useTheme()
-const route = useRoute()
 const store = useStore()
 const {xs, mdAndDown, lgAndUp} = useDisplay()
 
@@ -247,32 +244,28 @@ const props = defineProps({
   navList:{
     type:Array,
     default: () => [{
+      key: 'home',
       icon: 'mdi-home-outline',
-      title: 'Welcome',
-      to: '/',
+      title: '홈',
+      path: '/',
     },{
+      key: 'settings',
       icon: 'mdi-cog-outline',
-      title: 'Settings',
-      to: '/settings',
+      title: '설정',
+      path: '/settings',
     }],
   },
+  loadedNav:{
+    type:String,
+    default: ''
+  },
 })
+
+const emits = defineEmits(['click-nav-item'])
 
 onMounted(() => {
   theme.global.name.value = store.state.theme
 })
-
-watch(
-  route,
-  (to) => {
-    props.navList.forEach(nav => {
-      if(to.path.includes(nav.key)){
-        selectedNav.value = nav.key
-      }
-    })
-  },
-  {deep: true, immediate: true}
-)
 
 
 // header
@@ -364,12 +357,23 @@ const selectNavItem = (item) => {
   } else {
     rail.value = true
   }
+  
+  emits('click-nav-item', item)
 }
 
 const changeRail = () => {
   rail.value = !rail.value
 }
 
+watch(
+  () => props.loadedNav,
+  (to) => {
+    if(to && to.path !== selectedNav.value) {
+      selectNavItem(props.navList?.find(item => item.path === to))
+    }
+  },
+  {deep: true}
+)
 </script>
 
 <style lang="scss" scoped>
