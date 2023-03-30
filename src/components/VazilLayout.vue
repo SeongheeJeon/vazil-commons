@@ -75,7 +75,7 @@
           <template #expandContent>
             <div class="notice-content">
               <v-card-title class="d-flex align-center">
-                <span>알림</span>
+                <span>{{t('알림')}}</span>
                 <v-spacer></v-spacer>
                 <v-btn
                   size="x-small"
@@ -84,7 +84,7 @@
                   :disabled="unreadNotice.length === 0"
                   :ripple="false"
                 >
-                  모두 읽음
+                  {{t('모두 읽음')}}
                 </v-btn>
               </v-card-title>
               <v-divider/>
@@ -112,13 +112,13 @@
                     <div>
                       <v-icon style="opacity:0.7;" large class="mb-4">mdi-alert-circle-outline</v-icon>
                       <br/>
-                      <div>새로운 알림이 없습니다.</div>
+                      <div>{{t('새로운 알림이 없습니다.')}}</div>
                     </div>
                   </v-col>
                 </v-row>
               </v-card-text>
               <v-card-actions>
-                <v-btn block small text :ripple="false" style="text-transform: none" @click="goAlertPage()">전체 보기</v-btn>
+                <v-btn block small text :ripple="false" style="text-transform: none" @click="goAlertPage()">{{t('전체 보기')}}</v-btn>
               </v-card-actions>
             </div>
           </template>
@@ -164,7 +164,7 @@
             @click="selectNavItem(item)"
           >
             <v-icon>{{item.icon}}</v-icon>
-            <span>{{item.title}}</span>
+            <span>{{t(item.title)}}</span>
           </v-btn>
           
           <v-btn
@@ -205,7 +205,7 @@ const slots = useSlots()
 const theme = useTheme()
 const {xs, mdAndDown, lgAndUp} = useDisplay()
 const store = useStore()
-const {locale} = useI18n()
+const {t, locale} = useI18n()
 
 const props = defineProps({
   headerHeight:{

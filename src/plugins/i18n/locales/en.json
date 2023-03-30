@@ -1,3 +1,9 @@
 {
-  "홈 화면":"Home Page"
+  "홈":"Home",
+  "설정":"Settings",
+  "홈 화면":"Home Page",
+  "알림":"Notification",
+  "모두 읽음":"Read All",
+  "새로운 알림이 없습니다.": "No new notifications.",
+  "전체 보기": "View All"
 }
