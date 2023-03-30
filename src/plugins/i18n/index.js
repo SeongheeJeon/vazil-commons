@@ -1,7 +1,8 @@
+import { createI18n } from 'vue-i18n'
 import ko from './locales/ko.json'
 import en from './locales/en.json'
 
-export default {
+const options = {
   legacy: false,
   locale:'ko',
   fallbackLocale:'en',
@@ -10,3 +11,7 @@ export default {
     'en': en
   }
 }
+
+const i18n = createI18n(options)
+
+export {i18n, options}
