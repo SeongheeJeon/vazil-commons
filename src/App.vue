@@ -32,6 +32,8 @@
 </template>
 
 <script>
+import './assets/common.scss'
+
 import VazilLayout from './components/VazilLayout.vue'
 import HeaderItem from './components/VazilLayout/HeaderItem.vue'
 
