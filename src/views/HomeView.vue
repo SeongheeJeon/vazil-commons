@@ -36,6 +36,29 @@
         </v-row>
       </template> -->
     </VazilDialog>
+    
+    <VazilPagination
+      type="omitted"
+      color="red"
+      active-color="red"
+      :model-value="page"
+      length="22"
+      totalVisible="7"
+      showFirstLastPage
+    />
+
+    <VazilPagination
+      type="default"
+      color="red"
+      active-color="red"
+      :model-value="page"
+      length="22"
+      totalVisible="7"
+      :showFastPage="true"
+      :showFirstLastPage="true"
+      size="small"
+      @set-page="setPage"
+    />
   </div>
 </template>
 
@@ -57,6 +80,7 @@ export default {
         // bgColor: 'lightblue',
         mobileFull: true,
       },
+      page: 1,
     }
   },
   
@@ -67,6 +91,9 @@ export default {
     clickNo() {
       console.log('clickNo')
     },
+    setPage(){
+      console.log('setPage')
+    }
   }
 }
 </script>
