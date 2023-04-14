@@ -9,6 +9,7 @@ import {i18n} from './plugins/i18n'
 
 import VazilDialog from './components/VazilDialog.vue'
 import VazilPagination from './components/VazilPagination.vue'
+import VazilLogin from './components/VazilLogin.vue'
 
 loadFonts()
 
@@ -23,5 +24,6 @@ app.use(router)
   
 app.component('VazilDialog', VazilDialog)
 app.component('VazilPagination', VazilPagination)
+app.component('VazilLogin', VazilLogin)
 
 app.mount('#app')

@@ -6,6 +6,11 @@ export default createStore({
   state: {
     theme: 'light',
     locale: 'ko',
+    loginLockStatus:{
+      captchaActive: false,
+      latestLoginTryDate: '',
+      loginFailCount: 0
+    },
   },
   mutations: {
     setTheme(state, val) {
@@ -13,6 +18,9 @@ export default createStore({
     },
     setLocale(state, val) {
       state.locale = val
-    }
+    },
+    setLoginLockStatus: (state, loginLockStatus) => {
+      state.loginLockStatus = loginLockStatus
+    },
   },
 })

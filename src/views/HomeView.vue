@@ -37,7 +37,7 @@
       </template> -->
     </VazilDialog>
     
-    <VazilPagination
+    <!-- <VazilPagination
       type="omitted"
       color="red"
       active-color="red"
@@ -58,7 +58,21 @@
       :showFirstLastPage="true"
       size="small"
       @set-page="setPage"
-    />
+    /> -->
+    
+    <!-- <div style="background-color: white; width: 440px;" class="mx-auto my-4"> -->
+      <VazilLogin
+        color="green"
+        class="mt-4"
+        width="400"
+      >
+        <!-- <template #loadBtn>
+          <v-btn @click="$refs.testDialog.dialog = true">
+            <v-icon>mdi-earth</v-icon>
+          </v-btn>
+        </template> -->
+      </VazilLogin>
+    <!-- </div> -->
   </div>
 </template>
 
