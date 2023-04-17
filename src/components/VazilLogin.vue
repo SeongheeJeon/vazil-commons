@@ -2,14 +2,14 @@
   <v-container class="login-column" :style="`max-width: ${width}px;`">
     
     <!-- 로그인 -->
-    <v-sheet v-if="loginActive" width="100%" class="pa-3 login-sheet">
+    <v-sheet v-if="loginActive" width="100%" class="login-sheet pa-3">
       <h2>로그인</h2>
       
       <v-form class="my-4">
         <v-text-field 
           id="loginInput1"
           label="이메일"
-          v-bind="textFieldOptions"
+          v-bind="loginAttrs"
           v-model="email"
           :maxlength="50"
           @input="()=>{rulesOn=false}"
@@ -24,7 +24,7 @@
           id="loginInput2"
           type="password"
           label="비밀번호"
-          v-bind="textFieldOptions"
+          v-bind="loginAttrs"
           v-model="password"
           :maxlength="20"
           @input="()=>{rulesOn=false}"
@@ -76,7 +76,7 @@
               <img :src="require(`@/assets/image/main/google_icon.png`)">
             </v-avatar>
           </v-btn> -->
-          <a @click="findPWActiveAction">비밀번호 찾기</a> |
+          <a @click="findPWActiveAction">비밀번호 찾기</a> /
           <a @click="joinActiveAction">회원가입</a>
         </v-col>
       </v-row>
@@ -87,7 +87,7 @@
       <h2>회원가입</h2>
       <p class="mb-4">당신의 인공지능을 만들 수 있습니다.</p>
 
-      <!-- 회원가입 > 약관 동의 -->
+      <!-- 회원가입(1) > 약관 동의 -->
       <div v-if="joinIndex === 0" @submit.prevent class="agreement-container">
         <v-checkbox
           v-model="fullAgreement"
@@ -142,8 +142,6 @@
               style="max-width: 85%;"
             />
             <v-icon @click="agreementExpandItem = agreementExpandItem == 'policy' ? '' : 'policy'">mdi-chevron-down</v-icon>
-          </v-col>
-          <v-col cols="12">
             <div class="expand-content" :class="agreementExpandItem == 'policy' ? 'active' : ''">
               {{policy}}
             </div>
@@ -151,13 +149,14 @@
         </v-row>
       </div>
 
-      <!-- 회원가입 > 정보 입력 -->
+      <!-- 회원가입(2) > 정보 입력 -->
       <v-form class="signup-form py-2" v-if="joinIndex === 1" @submit.prevent :model-value="signupFormValid">
-        <h4>이메일</h4>
+        <h4>이메일<v-icon v-if="emailValid" class="validation-icon">mdi-check-circle</v-icon></h4>
         <v-row no-gutters align="center">
-          <v-col sm="5" >
+          <v-col cols="12" sm="5">
             <v-text-field
               id="signup-email-front"
+              class="signup-email-front"
               placeholder="이메일"
               v-bind="signupAttrs"
               v-model="signupEmailFront"
@@ -168,13 +167,15 @@
               dirty
             />
           </v-col>
-          <span class="px-2 mb-5">@</span>
-          <v-col sm="6">
+          <v-col cols="2" sm="1" class="d-flex justify-center">
+            <span class="px-2 mb-5">@</span>
+          </v-col>
+          <v-col cols="10" sm="6">
             <v-select
               id="signup-email-last"
               v-if="signupEmailBackSelect !== '직접 입력'"
               v-model="signupEmailBackSelect"
-              :items="['선택해주세요.', 'naver.com', 'gmail.com', 'daum.net', 'nate.com', 'hanmail.net', '직접 입력']"
+              :items="['선택해주세요.', '@naver.com', '@gmail.com', '@daum.net', '@nate.com', '@hanmail.net', '직접 입력']"
               @update:modelValue="e => e === '직접 입력' ? signupEmailBack = '' : signupEmailBack = e"
               placeholder="이메일 주소 선택"
               v-bind="signupAttrs"
@@ -195,13 +196,12 @@
           </v-col>
         </v-row>
             
-        <h4>비밀번호</h4>
+        <h4>비밀번호<v-icon v-if="pwValid" class="validation-icon">mdi-check-circle</v-icon></h4>
         <span class="text-grey" style="font-size: 0.9rem;">영문, 숫자를 포함하여 6~20자 이내로 입력해주세요.</span>
         <v-text-field
           id="signup-password"
           type="password"
           placeholder="비밀번호"
-          :append-icon="$regular.passwordEasy(signupPassword) ? 'mdi-check' :''"
           v-bind="signupAttrs"
           v-model="signupPassword"
           :rules="$rules.passwordEasy"
@@ -211,12 +211,11 @@
           autocomplete="password"
         />
         
-        <h4>비밀번호 확인</h4>
+        <h4>비밀번호 확인<v-icon v-if="pw2Valid" class="validation-icon">mdi-check-circle</v-icon></h4>
         <v-text-field
           id="signup-password-confirm"
           type="password"
           placeholder="비밀번호 확인"
-          :append-icon="$regular.passwordEasy(signupPassword) && signupPasswordconfirm === signupPassword ? 'mdi-check' :''"
           v-bind="signupAttrs"
           v-model="signupPasswordconfirm"
           :maxlength="20"
@@ -226,11 +225,10 @@
           autocomplete="password-confirm"
         />
         
-        <h4>닉네임</h4>
+        <h4>닉네임<v-icon v-if="nicknameValid" class="validation-icon">mdi-check-circle</v-icon></h4>
         <v-text-field
           id="signup-nickname"
           placeholder="닉네임"
-          :append-icon="$regular.koEnOnly(userName) ? 'mdi-check' : ''"
           v-bind="signupAttrs"
           v-model="userName"
           :rules="$rules.nickname"
@@ -240,45 +238,54 @@
         />
         
         <h4>자동 가입 방지 문자</h4>
-        <v-row no-gutters class="justify-center align-center my-2">
-          <img :src="captchaImgSrc" alt="" width="120" height="28">
-          <v-icon @click="generateCaptcha()" right>mdi-reload</v-icon>
+        <v-row no-gutters class="justify-space-around align-center mt-4 mb-4">
+          <v-col cols="6" sm="5" style="background-color: white; padding: 5px; padding-top: 10px; border-radius: 5px; min-width: 140px;" justify="center" align="center">
+            <img :src="captchaImgSrc" alt="" width="120" height="28">
+          </v-col>
+          <v-col cols="12" sm="1" class="text-center my-2">
+            <v-icon @click="generateCaptcha()" right>mdi-reload</v-icon>
+          </v-col>
+          <v-col cols="7" sm="4">
+            <v-text-field
+              class="signup-captcha"
+              type="text"
+              placeholder="문자 입력"
+              v-model="captchaInputValue"
+              hide-details
+              :maxlength="5"
+              @keyup.enter="userLogin"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
         </v-row>
-        <v-text-field
-          id="signup-captcha"
-          type="text"
-          placeholder="위의 문자를 그대로 입력해주세요."
-          v-model="captchaInputValue"
-          v-bind="signupAttrs"
-          :maxlength="5"
-          @keyup.enter="signupLogin"
-        />
-        <v-btn
-          v-if="joinIndex === 0"
-          elevation="0"
-          color="primary"
-          @click="joinIndex = 1"
-          block
-          large
-          :loading="loadingAuth"
-          :disabled="!check_privacy || !check_fourteen || !check_policy"
-          class="mb-4"
-        >
-          확인
-        </v-btn>
-        <v-btn
-          v-else
-          elevation="0"
-          block
-          color="primary"
-          @click="signupLogin"
-          large
-          :loading="loadingAuth"
-          class="mb-4"
-        >
-          가입하기
-        </v-btn>
       </v-form>
+        
+      <v-btn
+        v-if="joinIndex === 0"
+        elevation="0"
+        color="primary"
+        @click="joinIndex = 1"
+        block
+        large
+        :loading="loadingAuth"
+        :disabled="!check_privacy || !check_fourteen || !check_policy"
+        class="my-4"
+      >
+        확인
+      </v-btn>
+      <v-btn
+        v-else
+        elevation="0"
+        block
+        color="primary"
+        @click="signupLogin"
+        large
+        :loading="loadingAuth"
+        class="mb-4"
+      >
+        가입하기
+      </v-btn>
           
       <v-row no-gutters class="justify-center">
         <!-- <v-btn @click="$notify('hello')">TEST</v-btn> -->
@@ -286,36 +293,42 @@
       </v-row>
     </v-sheet>
 
-    <!-- 이메일 인증 & 비밀번호 찾기-->
-      <!-- <v-card color="#f5f5f5" flat v-if="validActive" max-width="420" width="100%">
-        <v-card-title>
-          <span v-if="validType === 'signup'">이메일 인증</span>
-          <span v-if="validType === 'findPW'">비밀번호 초기화</span>
-        </v-card-title>
-        <v-card-text  @submit.prevent>
-          <v-sheet class="my-4 pa-4" style="font-size:1rem; background-color:#777 !important;" dark rounded>
-            {{validEmailAddress}}
-          </v-sheet> 
+    <!-- 본인 확인(이메일 전송) 안내 -->
+    <v-sheet v-if="validActive" width="100%">
+      <h2 v-if="validType === 'signup'">이메일 인증</h2>
+      <h2 v-if="validType === 'findPW'">비밀번호 초기화</h2>
+      
+      <v-row
+        no-gutters
+        class="pa-2 my-8 mx-10 justify-center"
+        style="background-color: white; color: black; border-radius: 4px;"
+      >
+        {{validEmailAddress}}
+      </v-row> 
 
-          <div class="mx-1 my-4" v-if="validType === 'signup'">
-            이메일 인증을 위한 확인 메일이 해당 이메일 주소로 전송되었습니다.
-            발송시간으로 부터 2시간 이내에 인증을 완료해주세요.
-          </div>
-          <div class="mx-1 my-4" v-if="validType === 'findPW'">
-            비밀번호 변경 링크가 해당 이메일 주소로 전송되었습니다.
-            링크는 발송시간으로 부터 2시간까지 유효하오니 유효기간안에 링크를 통해 비밀번호 변경 절차를 진행하십시오.
-          </div>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-row no-gutters v-if="validType === 'signup'">
-            <v-col cols="12" align="center">
-              <v-btn :elevation="0" block color="primary" large   :loading="loadingAuth" @click="retryEmailSend(validEmailAddress)">이메일 재전송</v-btn>
-            </v-col>
-            <a @click="loginActiveAction">로그인 홈</a>
-          </v-row>
-        </v-card-actions>
-      </v-card> -->
+      <v-row class="mx-1 my-4">
+        <span v-if="validType === 'signup'">
+          이메일 인증을 위한 확인 메일이 해당 이메일 주소로 전송되었습니다.
+          발송시간으로 부터 2시간 이내에 인증을 완료해주세요.
+        </span>
+        <span v-if="validType === 'findPW'">
+          비밀번호 변경 링크가 해당 이메일 주소로 전송되었습니다.
+          링크는 발송시간으로 부터 2시간까지 유효하오니 유효기간안에 링크를 통해 비밀번호 변경 절차를 진행하십시오.  
+        </span>
+      </v-row>
+      
+      <v-btn
+        v-if="validType === 'signup'"
+        block
+        color="primary"
+        large
+        :loading="loadingAuth"
+        elevation="0"
+        @click="retryEmailSend(validEmailAddress)"
+      >이메일 재전송
+      </v-btn>
+      <a @click="loginActiveAction" class="mt-4 d-block text-center">로그인</a>
+    </v-sheet>
     
     <!-- 비밀번호 찾기 -->
     <v-sheet v-if="findPWActive" color="transparent" width="100%" class="pa-3">
@@ -332,6 +345,7 @@
         hide-details
         single-line
         variant="outlined"
+        density="comfortable"
       />         
       <v-btn
         :rounded="false"
@@ -344,7 +358,7 @@
       >
         비밀번호 찾기
       </v-btn>
-      <a @click="loginActiveAction" class="d-block text-center mt-4">로그인 홈</a>
+      <a @click="loginActiveAction" class="d-block text-center mt-4">로그인</a>
     </v-sheet>
     
     <notifications
@@ -392,7 +406,7 @@ export default {
       check_fourteen:false,
       check_privacy:false,
       check_policy:false,
-      validEmailAddress:'',
+      validEmailAddress:'se5nghee@naver.com',
       email:'',
       password:'',
       loginLockCount: 5,
@@ -400,12 +414,13 @@ export default {
       captchaImgSrc: '',
       captchaText: '',
       captchaInputValue: '',
-      textFieldOptions: {
-        color: this.color,
-      },
+      // textFieldOptions: {
+      //   color: this.color,
+      // },
       loginAttrs: {
         rounded:false,
         autofocus:true,
+        density: 'comfortable'
       },
       signupAttrs: {
         rounded:false,
@@ -448,7 +463,7 @@ export default {
       joinIndex: 1,
       validActive:false,
       findPWActive: false,
-      validType: '',
+      validType: 'signup',
     }
   },
   watch:{
@@ -471,6 +486,19 @@ export default {
     },
     signupEmail() {
       return this.signupEmailFront + '@' + this.signupEmailBack
+    },
+    emailValid(){
+      return this.$regular.email(this.signupEmailFront + '@' + this.signupEmailBack)
+    },
+    pwValid(){
+      return this.$regular.passwordEasy(this.signupPassword)
+    },
+    pw2Valid(){
+      return this.$regular.passwordEasy(this.signupPassword)
+        && this.signupPasswordconfirm === this.signupPassword
+    },
+    nicknameValid(){
+      return this.$regular.koEnOnly(this.userName)
     }
   },
   methods:{
@@ -579,17 +607,17 @@ export default {
       
       
       // 입력값이 올바르지 않을경우 
-      if(this.email.length < 1){
-        document.getElementById('loginInput1').focus()
-        return 
-      }else if(!this.$regular.emailPattern(this.email)){
-        console.log('이메일 형식 오류')
-        document.getElementById('loginInput1').focus()
-        return
-      } else if(this.password.length < 1) {
-        document.getElementById('loginInput2').focus()
-        return
-      }      
+      // if(this.email.length < 1){
+      //   document.getElementById('loginInput1').focus()
+      //   return 
+      // }else if(!this.$regular.emailPattern(this.email)){
+      //   console.log('이메일 형식 오류')
+      //   document.getElementById('loginInput1').focus()
+      //   return
+      // } else if(this.password.length < 1) {
+      //   document.getElementById('loginInput2').focus()
+      //   return
+      // }      
       
       if(this.$store.state.loginLockStatus.captchaActive && !this.checkCaptcha()){
         return
@@ -1003,7 +1031,7 @@ export default {
     setTimeout(() => {
       // this.loginActive = true
       this.loginActive = false
-      this.JoinActive = true
+      this.validActive = true
     
     }, 100);
   },
@@ -1038,7 +1066,7 @@ export default {
   z-index: 1;
   // border: 1px solid #7e7e7e;
   // border-radius: 5px;
-  background-color: #fff;
+  // background-color: #fff;
   
   a {
     display: inline-block;
@@ -1100,7 +1128,7 @@ export default {
     
     &.login-sheet {
       .v-form { // 로그인 v-text-field border 커스텀
-        .v-text-field:nth-child(1) .v-field { // 이메일
+        > .v-text-field:nth-child(1) .v-field { // 이메일
           .v-field__outline {
               transition: box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
               border-radius: 0;
@@ -1140,7 +1168,7 @@ export default {
           }
         }
         
-        .v-text-field:nth-child(2) { // 비밀번호
+        > .v-text-field:nth-child(2) { // 비밀번호
           .v-field__outline {
             .v-field__outline__start {
               border-radius: 0px 0 0 4px;
@@ -1170,8 +1198,16 @@ export default {
         .v-text-field {
           margin-bottom: 24px;
           
-          .v-input__append {
-            color: green;
+          @media screen and (max-width: 600px) {
+            &.signup-email-front {
+              margin-bottom: 4px;
+              // background-color: red !important;
+            }
+          }
+
+          
+          &.signup-captcha {
+            margin-bottom: 0;
           }
           
           .email-last {
@@ -1181,15 +1217,16 @@ export default {
               right: 0;
               font-size: 0.9rem;
             }
-          } 
+          }
+        }
+        h4 {
+          padding-bottom: 4px;
         }
         
-        .error-msg {
-          color: rgba(var(--v-theme-error), 1);
-          font-size: 0.9rem;
-          padding-left: 16px;
-          margin-bottom: 8px;
-          display: inline-block;
+        .validation-icon {
+          color: rgba(var(--v-theme-success), 1);
+          padding-left: 8px;
+          font-size: 1rem;
         }
       }
     }
