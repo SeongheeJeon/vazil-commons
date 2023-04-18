@@ -1,5 +1,5 @@
 <template>
-  <v-container class="login-column" :style="`max-width: ${width}px;`">
+  <v-container class="login-column" :style="`max-width: ${width}px; background-color: ${bgColor};`">
     
     <!-- 로그인 -->
     <v-sheet v-if="loginActive" width="100%" class="login-sheet pa-3">
@@ -11,14 +11,9 @@
           label="이메일"
           v-bind="loginAttrs"
           v-model="email"
-          :maxlength="50"
           @input="()=>{rulesOn=false}"
           @keyup.enter="userLogin"
-          :variant="textFieldVariant"
-          :single-line="textFieldSingleLine"
-          :hide-details="textFieldSingleLine"
           autocomplete="email"
-          density="comfortable"
         />
         <v-text-field
           id="loginInput2"
@@ -26,13 +21,9 @@
           label="비밀번호"
           v-bind="loginAttrs"
           v-model="password"
-          :maxlength="20"
           @input="()=>{rulesOn=false}"
           @keyup.enter="userLogin"
-          :variant="textFieldVariant"
-          :single-line="textFieldSingleLine"
           autocomplete="password"
-          density="comfortable"
         />
         <v-row no-gutters v-if="$store.state.loginLockStatus?.captchaActive" justify="space-around" align="center" class="mt-4 mb-8">
           <v-col cols="5" style="background-color: white; padding: 5px; padding-top: 10px; border-radius: 5px;" justify="center" align="center">
@@ -58,24 +49,21 @@
       <!-- action buttons -->
       <v-row no-gutters class="mt-4" style="text-align: center;">
         <v-col cols="12">
-          <v-btn dark elevation="0" color="primary" @click="userLogin" block large :loading="loadingAuth" class="mb-6">로그인</v-btn>
+          <v-btn v-bind="actionBtnAttrs" @click="userLogin" :loading="loadingAuth" class="mb-6">로그인</v-btn>
+          
           <div><span class="text-subtitle-2">SNS 간편 로그인/회원가입</span></div>
-          <div class="mb-7 sns-btns">
-            <v-btn @click="naverOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
-              <img :src="require(`@/assets/image/naver.png`)"/>
+          <div class="mb-7 mt-1 sns-btns">
+            <v-btn v-if="snsLoginList.includes('naver')" @click="naverOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
+              <img :src="require(`@/assets/image/naver_rac.png`)"/>
+            </v-btn>
+            <v-btn v-if="snsLoginList.includes('kakao')"  @click="kakaoOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
+              <img :src="require(`@/assets/image/kakao.png`)">
+            </v-btn>
+            <v-btn v-if="snsLoginList.includes('google')"  @click="googleOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
+              <img :src="require(`@/assets/image/google.png`)">
             </v-btn>
           </div>
-          
-          <!-- <v-btn dark elevation="0" style="background-color:#03C75A !important;" @click="naverOAuth2Login" block large :disabled="loadingAuth" class="mb-4">
-            <span>네이버 로그인</span>
-          </v-btn> -->
-          
-          <!-- Google 로그인 -->
-          <!-- <v-btn fab color="#fff" small transition="none" @click="googleOAuth2Login">
-            <v-avatar size="20px">
-              <img :src="require(`@/assets/image/main/google_icon.png`)">
-            </v-avatar>
-          </v-btn> -->
+                    
           <a @click="findPWActiveAction">비밀번호 찾기</a> /
           <a @click="joinActiveAction">회원가입</a>
         </v-col>
@@ -83,14 +71,14 @@
     </v-sheet>
     
     <!-- 회원가입 -->
-    <v-sheet v-if="JoinActive" width="100%" class="signup-sheet pa-3">
+    <v-sheet v-if="joinActive" width="100%" class="signup-sheet pa-3">
       <h2>회원가입</h2>
       <p class="mb-4">당신의 인공지능을 만들 수 있습니다.</p>
 
       <!-- 회원가입(1) > 약관 동의 -->
       <div v-if="joinIndex === 0" @submit.prevent class="agreement-container">
         <v-checkbox
-          v-model="fullAgreement"
+          :model-value="fullAgreement"
           @click="clickFullAgreement"
           hide-details
           label="전체 동의"
@@ -101,49 +89,33 @@
         
         <v-divider class="my-2"/>
       
-        <v-row no-gutters>
-          <v-col cols="12" class="ma-0 pa-0">
+        <v-row no-gutters v-for="(item, index) in agreementList" :key="index">
+          <v-col v-if="!item.content" cols="12" class="ma-0 pa-0">
             <v-checkbox
-              v-model="check_fourteen"
+              v-model="checkedAgreement"
+              :true-value="item.key"
               hide-details
+              multiple
               density="compact"
-              label="(필수) 만 14세 이상입니다."
+              :label="`${(item.required ? '(필수) ' : '') + item.title}`"
             />
           </v-col>
-        </v-row>
-        
-        <v-row no-gutters>
-          <v-col cols="12" class="ma-0 pa-0 d-flex flex-wrap justify-space-between align-center">
+          
+          <v-col v-else cols="12" class="ma-0 pa-0 d-flex flex-wrap justify-space-between align-center">
             <v-checkbox
-              v-model="check_privacy"
+              v-model="checkedAgreement"
+              :true-value="item.key"
               hide-details
+              multiple
               density="compact"
-              label="(필수) 개인정보 수집 및 이용 동의"
-              @click="agreementExpandItem = 'privacy'"
+              :label="`${(item.required ? '(필수) ' : '') + item.title}`"
+              @click="agreementExpandItem = item.key"
               class="d-inline-block"
               style="max-width: 85%;"
             />
-            <v-icon @click="agreementExpandItem = agreementExpandItem == 'privacy' ? '' : 'privacy'">mdi-chevron-down</v-icon>
-            <div class="expand-content" :class="agreementExpandItem == 'privacy' ? 'active' : ''">
-              {{privacy}}
-            </div>
-          </v-col>
-        </v-row>
-        
-        <v-row no-gutters>
-          <v-col cols="12" class="ma-0 pa-0 d-flex flex-wrap justify-space-between align-center">
-            <v-checkbox
-              v-model="check_policy"
-              hide-details
-              density="compact"
-              label="(필수) 이용약관 동의"
-              @click="agreementExpandItem = 'policy'"
-              class="d-inline-block"
-              style="max-width: 85%;"
-            />
-            <v-icon @click="agreementExpandItem = agreementExpandItem == 'policy' ? '' : 'policy'">mdi-chevron-down</v-icon>
-            <div class="expand-content" :class="agreementExpandItem == 'policy' ? 'active' : ''">
-              {{policy}}
+            <v-icon @click="agreementExpandItem = agreementExpandItem == item.key ? '' : item.key">mdi-chevron-down</v-icon>
+            <div class="expand-content" :class="agreementExpandItem == item.key ? 'active' : ''">
+              {{item.content}}
             </div>
           </v-col>
         </v-row>
@@ -151,136 +123,138 @@
 
       <!-- 회원가입(2) > 정보 입력 -->
       <v-form class="signup-form py-2" v-if="joinIndex === 1" @submit.prevent :model-value="signupFormValid">
-        <h4>이메일<v-icon v-if="emailValid" class="validation-icon">mdi-check-circle</v-icon></h4>
-        <v-row no-gutters align="center">
-          <v-col cols="12" sm="5">
-            <v-text-field
-              id="signup-email-front"
-              class="signup-email-front"
-              placeholder="이메일"
-              v-bind="signupAttrs"
-              v-model="signupEmailFront"
-              :rules="$rules.emailFirst"
-              :maxlength="50"
-              @input="()=>{rulesOn=false}"
-              @keyup.enter="signupLogin"
-              dirty
-            />
-          </v-col>
-          <v-col cols="2" sm="1" class="d-flex justify-center">
-            <span class="px-2 mb-5">@</span>
-          </v-col>
-          <v-col cols="10" sm="6">
-            <v-select
-              id="signup-email-last"
-              v-if="signupEmailBackSelect !== '직접 입력'"
-              v-model="signupEmailBackSelect"
-              :items="['선택해주세요.', '@naver.com', '@gmail.com', '@daum.net', '@nate.com', '@hanmail.net', '직접 입력']"
-              @update:modelValue="e => e === '직접 입력' ? signupEmailBack = '' : signupEmailBack = e"
-              placeholder="이메일 주소 선택"
-              v-bind="signupAttrs"
-            />
-            <v-text-field
-              v-else
-              id="signup-email-last"
-              class="email-last"
-              placeholder="이메일"
-              v-bind="signupAttrs"
-              v-model="signupEmailBack"
-              :rules="$rules.emailLast"
-              :maxlength="50"
-              @input="()=>{rulesOn=false}"
-              @click:appendInner="signupEmailBackSelect = '선택해주세요.', signupEmailBack = ''"
-              append-inner-icon="mdi-close"
-            />
-          </v-col>
-        </v-row>
+        <div v-if="signUpInputList.includes('email')">
+          <h4>이메일<v-icon v-if="emailValid" class="validation-icon">mdi-check-circle</v-icon></h4>
+          <v-row no-gutters align="center">
+            <v-col cols="12" sm="5">
+              <v-text-field
+                id="signup-email-front"
+                class="signup-email-front"
+                placeholder="이메일"
+                v-bind="signupAttrs"
+                v-model="signupEmailFront"
+                :rules="$rules.emailFirst"
+                :maxlength="50"
+                @input="()=>{rulesOn=false}"
+                @keyup.enter="signupLogin"
+                dirty
+              />
+            </v-col>
+            <v-col cols="2" sm="1" class="d-flex justify-center">
+              <span class="px-2 mb-5">@</span>
+            </v-col>
+            <v-col cols="10" sm="6">
+              <v-select
+                id="signup-email-last"
+                v-if="signupEmailBackSelect !== '직접 입력'"
+                v-model="signupEmailBackSelect"
+                :items="['선택해주세요.', 'naver.com', 'gmail.com', 'daum.net', 'nate.com', 'hanmail.net', '직접 입력']"
+                @update:modelValue="e => e === '직접 입력' ? signupEmailBack = '' : signupEmailBack = e"
+                placeholder="이메일 주소 선택"
+                v-bind="signupAttrs"
+              />
+              <v-text-field
+                v-else
+                id="signup-email-last"
+                class="email-last"
+                placeholder="이메일"
+                v-bind="signupAttrs"
+                v-model="signupEmailBack"
+                :rules="$rules.emailLast"
+                :maxlength="50"
+                @input="()=>{rulesOn=false}"
+                @click:appendInner="signupEmailBackSelect = '선택해주세요.', signupEmailBack = ''"
+                append-inner-icon="mdi-close"
+              />
+            </v-col>
+          </v-row>
+        </div>
             
-        <h4>비밀번호<v-icon v-if="pwValid" class="validation-icon">mdi-check-circle</v-icon></h4>
-        <span class="text-grey" style="font-size: 0.9rem;">영문, 숫자를 포함하여 6~20자 이내로 입력해주세요.</span>
-        <v-text-field
-          id="signup-password"
-          type="password"
-          placeholder="비밀번호"
-          v-bind="signupAttrs"
-          v-model="signupPassword"
-          :rules="$rules.passwordEasy"
-          :maxlength="20"
-          @input="()=>{rulesOn=false}"
-          @keyup.enter="signupLogin"
-          autocomplete="password"
-        />
+        <div v-if="signUpInputList.includes('password')">
+          <h4>비밀번호<v-icon v-if="pwValid" class="validation-icon">mdi-check-circle</v-icon></h4>
+          <span class="text-grey" style="font-size: 0.9rem;">영문, 숫자를 포함하여 6~20자 이내로 입력해주세요.</span>
+          <v-text-field
+            id="signup-password"
+            type="password"
+            placeholder="비밀번호"
+            v-bind="signupAttrs"
+            v-model="signupPassword"
+            :rules="$rules.passwordEasy"
+            :maxlength="20"
+            @input="()=>{rulesOn=false}"
+            @keyup.enter="signupLogin"
+            autocomplete="password"
+          />
+          
+          <h4>비밀번호 확인<v-icon v-if="pw2Valid" class="validation-icon">mdi-check-circle</v-icon></h4>
+          <v-text-field
+            id="signup-password-confirm"
+            type="password"
+            placeholder="비밀번호 확인"
+            v-bind="signupAttrs"
+            v-model="signupPasswordconfirm"
+            :maxlength="20"
+            :rules="[value => value == signupPassword || '비밀번호가 일치하지 않습니다.']"
+            @input="()=>{rulesOn=false}"
+            @keyup.enter="signupLogin"
+            autocomplete="password-confirm"
+          />
+        </div>
         
-        <h4>비밀번호 확인<v-icon v-if="pw2Valid" class="validation-icon">mdi-check-circle</v-icon></h4>
-        <v-text-field
-          id="signup-password-confirm"
-          type="password"
-          placeholder="비밀번호 확인"
-          v-bind="signupAttrs"
-          v-model="signupPasswordconfirm"
-          :maxlength="20"
-          :rules="[value => value == signupPassword || '비밀번호가 일치하지 않습니다.']"
-          @input="()=>{rulesOn=false}"
-          @keyup.enter="signupLogin"
-          autocomplete="password-confirm"
-        />
+        <div v-if="signUpInputList.includes('nickname')">
+          <h4>닉네임<v-icon v-if="nicknameValid" class="validation-icon">mdi-check-circle</v-icon></h4>
+          <v-text-field
+            id="signup-nickname"
+            placeholder="닉네임"
+            v-bind="signupAttrs"
+            v-model="userName"
+            :rules="$rules.nickname"
+            :maxlength="50"
+            @input="()=>{rulesOn=false}"
+            @keyup.enter="signupLogin"
+          />
+        </div>
         
-        <h4>닉네임<v-icon v-if="nicknameValid" class="validation-icon">mdi-check-circle</v-icon></h4>
-        <v-text-field
-          id="signup-nickname"
-          placeholder="닉네임"
-          v-bind="signupAttrs"
-          v-model="userName"
-          :rules="$rules.nickname"
-          :maxlength="50"
-          @input="()=>{rulesOn=false}"
-          @keyup.enter="signupLogin"
-        />
-        
-        <h4>자동 가입 방지 문자</h4>
-        <v-row no-gutters class="justify-space-around align-center mt-4 mb-4">
-          <v-col cols="6" sm="5" style="background-color: white; padding: 5px; padding-top: 10px; border-radius: 5px; min-width: 140px;" justify="center" align="center">
-            <img :src="captchaImgSrc" alt="" width="120" height="28">
-          </v-col>
-          <v-col cols="12" sm="1" class="text-center my-2">
-            <v-icon @click="generateCaptcha()" right>mdi-reload</v-icon>
-          </v-col>
-          <v-col cols="7" sm="4">
-            <v-text-field
-              class="signup-captcha"
-              type="text"
-              placeholder="문자 입력"
-              v-model="captchaInputValue"
-              hide-details
-              :maxlength="5"
-              @keyup.enter="userLogin"
-              variant="outlined"
-              density="compact"
-            />
-          </v-col>
-        </v-row>
+        <div v-if="signUpInputList.includes('captcha')">
+          <h4>자동 가입 방지 문자</h4>
+          <v-row no-gutters class="justify-space-around align-center mt-4 mb-4">
+            <v-col cols="6" sm="5" style="background-color: white; padding: 5px; padding-top: 10px; border-radius: 5px; min-width: 140px;" justify="center" align="center">
+              <img :src="captchaImgSrc" alt="" width="120" height="28">
+            </v-col>
+            <v-col cols="12" sm="1" class="text-center my-2">
+              <v-icon @click="generateCaptcha()" right>mdi-reload</v-icon>
+            </v-col>
+            <v-col cols="7" sm="4">
+              <v-text-field
+                class="signup-captcha"
+                type="text"
+                placeholder="문자 입력"
+                v-model="captchaInputValue"
+                hide-details
+                :maxlength="5"
+                @keyup.enter="userLogin"
+                variant="outlined"
+                density="compact"
+              />
+            </v-col>
+          </v-row>
+        </div>
       </v-form>
         
       <v-btn
         v-if="joinIndex === 0"
-        elevation="0"
-        color="primary"
+        v-bind="actionBtnAttrs"
         @click="joinIndex = 1"
-        block
-        large
         :loading="loadingAuth"
-        :disabled="!check_privacy || !check_fourteen || !check_policy"
+        :disabled="checkedAgreement.length < agreementList.length"
         class="my-4"
       >
         확인
       </v-btn>
       <v-btn
         v-else
-        elevation="0"
-        block
-        color="primary"
+        v-bind="actionBtnAttrs"
         @click="signupLogin"
-        large
         :loading="loadingAuth"
         class="mb-4"
       >
@@ -308,7 +282,7 @@
 
       <v-row class="mx-1 my-4">
         <span v-if="validType === 'signup'">
-          이메일 인증을 위한 확인 메일이 해당 이메일 주소로 전송되었습니다.
+          해당 이메일로 인증 메일이 전송되었습니다.
           발송시간으로 부터 2시간 이내에 인증을 완료해주세요.
         </span>
         <span v-if="validType === 'findPW'">
@@ -319,11 +293,8 @@
       
       <v-btn
         v-if="validType === 'signup'"
-        block
-        color="primary"
-        large
+        v-bind="actionBtnAttrs"
         :loading="loadingAuth"
-        elevation="0"
         @click="retryEmailSend(validEmailAddress)"
       >이메일 재전송
       </v-btn>
@@ -348,10 +319,7 @@
         density="comfortable"
       />         
       <v-btn
-        :rounded="false"
-        elevation="0"
-        block
-        color="primary"
+        v-bind="actionBtnAttrs"
         @click="findPW"
         :loading="loadingAuth"
         class="mb-2"
@@ -360,30 +328,28 @@
       </v-btn>
       <a @click="loginActiveAction" class="d-block text-center mt-4">로그인</a>
     </v-sheet>
-    
-    <notifications
-      position="center"
-    />
-
   </v-container>
 </template>
 <script>
-import privacy from '../assets/privacy.js';
-import policy from '../assets/policy.js';
+
 export default {
   name: 'vazilDialog',
   props: {
-    type: {
-      type: String,
-      default: 'default'
-    },
-    color: {
-      type: String,
-      default: 'primary'
-    },
     width: {
       type: String,
       default: '420'
+    },
+    bgColor: {
+      type: String,
+      default: 'transparent'
+    },
+    mainColor: {
+      type: String,
+      default: 'primary'
+    },
+    snsLoginList: {
+      type: Array,
+      default: () => []
     },
     textFieldVariant: {
       type: String,
@@ -393,16 +359,29 @@ export default {
       type: Boolean,
       default: true
     },
+    agreementList: {
+      type: Array,
+      default: () => [{
+        key: 'fourteen',
+        title: '만 14세 이상입니다.',
+        content: null,
+        required: true,
+      }]
+    },
+    signUpInputList: {
+      type: Array,
+      default: () => ['email', 'password', 'nickname']
+    }
   },
   data: function(){
     return {
       signupFormValid: false,
       emailFirstError: false,
-      privacy: privacy,
-      policy: policy,
+      // privacy: privacy,
+      // policy: policy,
       agreementExpandItem: '',
       loadingAuth: false,
-      check_all:false,
+      checkedAgreement: [],
       check_fourteen:false,
       check_privacy:false,
       check_policy:false,
@@ -420,7 +399,11 @@ export default {
       loginAttrs: {
         rounded:false,
         autofocus:true,
-        density: 'comfortable'
+        density: 'comfortable',
+        maxLength: 50,
+        variant: this.textFieldVariant,
+        singleLine: this.textFieldSingleLine,
+        hideDetails: this.textFieldSingleLine
       },
       signupAttrs: {
         rounded:false,
@@ -431,27 +414,12 @@ export default {
         lass: 'my-2',
         hideDetails: true,
       },
+      actionBtnAttrs: {
+        elevation: 0,
+        color: this.mainColor,
+        block: true,
+      },
       rulesOn: false,
-      // rules: {
-      //   emailRequired: value => !!value || '이메일을 입력해주세요.',
-      //   passwordRequired: value => !!value || '비밀번호를 입력해주세요.',
-      //   email: value => {
-      //     return this.$regular.emailPattern(value) || '올바른 이메일을 입력해주세요.'
-      //   },
-      //   password: value => {
-      //     return this.$regular.passwordEasy(value) || '영문·숫자·특수문자(!@$%^&*)를 조합하여 9~20자 이내로 입력해주세요.'
-      //   },
-        
-      //   passwordOk:value=>{
-      //     return value === this.signupPassword || '비밀번호가 일치하지 않습니다.'
-      //   },
-      //   name:value=>{
-      //     return this.$regular.koEnOnly(value) || '한글, 영문만 입력해주세요.'
-      //   },
-      //   number:value => {
-      //     return this.$regular.number(value) || '숫자 입력해주세요.'
-      //   }
-      // },
       loginActive:true,
       signupEmailFront:'',
       signupEmailBackSelect:'선택해주세요.',
@@ -459,14 +427,20 @@ export default {
       signupPassword:'',
       signupPasswordconfirm:'',
       userName:'',
-      JoinActive:false,
-      joinIndex: 1,
+      joinActive:false,
+      joinIndex: 0,
       validActive:false,
       findPWActive: false,
       validType: 'signup',
     }
   },
   watch:{
+    fullAgreement(val){
+      console.log('fullAgreement : ', val)
+    },
+    checkedAgreement(val){
+      console.log('checkedAgreement : ', val)
+    },
     emailFirstError(val){
       console.log('emailFirstError : ', val)
     },
@@ -482,7 +456,7 @@ export default {
   },
   computed: {
     fullAgreement() {
-      return this.check_fourteen && this.check_privacy && this.check_policy
+      return this.checkedAgreement.length === this.agreementList.length
     },
     signupEmail() {
       return this.signupEmailFront + '@' + this.signupEmailBack
@@ -509,13 +483,9 @@ export default {
     },
     clickFullAgreement() {
       if(this.fullAgreement) {
-        this.check_fourteen = false
-        this.check_privacy = false
-        this.check_policy = false
+        this.checkedAgreement = []
       } else {
-        this.check_fourteen = true
-        this.check_privacy = true
-        this.check_policy = true
+        this.checkedAgreement = this.agreementList.map(item => item.key)
       }
     },
     retryEmailSend(email) {
@@ -533,13 +503,15 @@ export default {
     },
     // Google 로그인 구현
     googleOAuth2Login(){
-      this.$auth.loginWith('google')
-      .then((res) => {
-        console.log('google' + res);
-      })
-      .catch(err=>{
-        console.log(err)
-      })
+      console.log('google login')
+      
+      // this.$auth.loginWith('google')
+      // .then((res) => {
+      //   console.log('google' + res);
+      // })
+      // .catch(err=>{
+      //   console.log(err)
+      // })
     },
     // Naver 로그인 구현
     async naverOAuth2Login(){
@@ -594,6 +566,10 @@ export default {
       //       return 
       //     }
       //   })
+    },
+    
+    kakaoOAuth2Login(){
+      console.log('kakao login')
     },
     
     //로그인 구현
@@ -971,7 +947,7 @@ export default {
         this.loginActive = false
       }, 100);
       setTimeout(() => {
-        this.JoinActive = true
+        this.joinActive = true
         this.validActive = false
       }, 200);
 
@@ -985,7 +961,7 @@ export default {
       this.captchaInputValue = ''
       
       setTimeout(() => {
-        this.JoinActive = false
+        this.joinActive = false
         this.findPWActive = false
       }, 100);
       setTimeout(() => {
@@ -1001,7 +977,7 @@ export default {
       this.password = '';
       setTimeout(() => {
         this.loginActive = false
-        this.JoinActive = false
+        this.joinActive = false
         this.findPWActive = false
       }, 100);
       setTimeout(() => {
@@ -1030,8 +1006,9 @@ export default {
   created(){
     setTimeout(() => {
       // this.loginActive = true
-      this.loginActive = false
-      this.validActive = true
+      // this.loginActive = false
+      // this.joinActive = true
+      // this.joinIndex = 1
     
     }, 100);
   },
@@ -1066,7 +1043,7 @@ export default {
   z-index: 1;
   // border: 1px solid #7e7e7e;
   // border-radius: 5px;
-  // background-color: #fff;
+  // background-color: beige;
   
   a {
     display: inline-block;
@@ -1184,6 +1161,7 @@ export default {
       .sns-btns { // sns button 커스텀
         .v-btn {
           opacity: 1;
+          margin: 0 5px;
           
           img {
             width: 36px;
