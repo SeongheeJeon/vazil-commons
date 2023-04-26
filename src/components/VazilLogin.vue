@@ -2,26 +2,24 @@
   <v-container class="login-column" :style="`max-width: ${width}px; background-color: ${bgColor};`">
     
     <!-- 로그인 -->
-    <v-sheet v-if="loginActive" width="100%" class="login-sheet pa-3">
+    <v-sheet v-if="sheetType==='login'" width="100%" class="login-sheet pa-3">
       <h2>로그인</h2>
       
       <v-form class="my-4">
         <v-text-field 
-          id="loginInput1"
+          id="login-email-input"
           label="이메일"
           v-bind="loginAttrs"
           v-model="email"
-          @input="()=>{rulesOn=false}"
           @keyup.enter="userLogin"
           autocomplete="email"
         />
         <v-text-field
-          id="loginInput2"
+          id="login-password-input"
           type="password"
           label="비밀번호"
           v-bind="loginAttrs"
           v-model="password"
-          @input="()=>{rulesOn=false}"
           @keyup.enter="userLogin"
           autocomplete="password"
         />
@@ -32,7 +30,7 @@
           <v-icon @click="generateCaptcha()" right>mdi-reload</v-icon>
           <v-col cols="4">
             <v-text-field
-              id="loginInput3"
+              id="login-captcha-input"
               type="text"
               placeholder="문자 입력"
               v-model="captchaInputValue"
@@ -44,6 +42,7 @@
             />
           </v-col>
         </v-row>
+        <v-row no-gutters v-if="errorMsg" class="text-red text-subtitle-2 pa-2">{{errorMsg}}</v-row>
       </v-form>
       
       <!-- action buttons -->
@@ -64,14 +63,14 @@
             </v-btn>
           </div>
                     
-          <a @click="findPWActiveAction">비밀번호 찾기</a> /
-          <a @click="joinActiveAction">회원가입</a>
+          <a @click="loadFindPWSheet">비밀번호 찾기</a> /
+          <a @click="loadJoinSheet">회원가입</a>
         </v-col>
       </v-row>
     </v-sheet>
     
     <!-- 회원가입 -->
-    <v-sheet v-if="joinActive" width="100%" class="signup-sheet pa-3">
+    <v-sheet v-if="sheetType==='join'" width="100%" class="join-sheet pa-3">
       <h2>회원가입</h2>
       <p class="mb-4">당신의 인공지능을 만들 수 있습니다.</p>
 
@@ -122,21 +121,20 @@
       </div>
 
       <!-- 회원가입(2) > 정보 입력 -->
-      <v-form class="signup-form py-2" v-if="joinIndex === 1" @submit.prevent :model-value="signupFormValid">
-        <div v-if="signUpInputList.includes('email')">
+      <v-form class="join-form py-2" v-if="joinIndex === 1" @submit.prevent>
+        <div v-if="joinInputList.includes('email')">
           <h4>이메일<v-icon v-if="emailValid" class="validation-icon">mdi-check-circle</v-icon></h4>
           <v-row no-gutters align="center">
             <v-col cols="12" sm="5">
               <v-text-field
-                id="signup-email-front"
-                class="signup-email-front"
+                id="join-email-front"
+                class="join-email-front"
                 placeholder="이메일"
-                v-bind="signupAttrs"
-                v-model="signupEmailFront"
+                v-bind="joinAttrs"
+                v-model="joinEmailFront"
                 :rules="$rules.emailFirst"
                 :maxlength="50"
-                @input="()=>{rulesOn=false}"
-                @keyup.enter="signupLogin"
+                @keyup.enter="joinLogin"
                 dirty
               />
             </v-col>
@@ -145,77 +143,73 @@
             </v-col>
             <v-col cols="10" sm="6">
               <v-select
-                id="signup-email-last"
-                v-if="signupEmailBackSelect !== '직접 입력'"
-                v-model="signupEmailBackSelect"
+                id="join-email-last"
+                v-if="joinEmailBackSelect !== '직접 입력'"
+                v-model="joinEmailBackSelect"
                 :items="['선택해주세요.', 'naver.com', 'gmail.com', 'daum.net', 'nate.com', 'hanmail.net', '직접 입력']"
-                @update:modelValue="e => e === '직접 입력' ? signupEmailBack = '' : signupEmailBack = e"
+                @update:modelValue="e => e === '직접 입력' ? joinEmailBack = '' : joinEmailBack = e"
                 placeholder="이메일 주소 선택"
-                v-bind="signupAttrs"
+                v-bind="joinAttrs"
               />
               <v-text-field
                 v-else
-                id="signup-email-last"
+                id="join-email-last"
                 class="email-last"
                 placeholder="이메일"
-                v-bind="signupAttrs"
-                v-model="signupEmailBack"
+                v-bind="joinAttrs"
+                v-model="joinEmailBack"
                 :rules="$rules.emailLast"
                 :maxlength="50"
-                @input="()=>{rulesOn=false}"
-                @click:appendInner="signupEmailBackSelect = '선택해주세요.', signupEmailBack = ''"
+                @click:appendInner="joinEmailBackSelect = '선택해주세요.', joinEmailBack = ''"
                 append-inner-icon="mdi-close"
               />
             </v-col>
           </v-row>
         </div>
             
-        <div v-if="signUpInputList.includes('password')">
+        <div v-if="joinInputList.includes('password')">
           <h4>비밀번호<v-icon v-if="pwValid" class="validation-icon">mdi-check-circle</v-icon></h4>
           <span class="text-grey" style="font-size: 0.9rem;">영문, 숫자를 포함하여 6~20자 이내로 입력해주세요.</span>
           <v-text-field
-            id="signup-password"
+            id="join-password"
             type="password"
             placeholder="비밀번호"
-            v-bind="signupAttrs"
-            v-model="signupPassword"
+            v-bind="joinAttrs"
+            v-model="joinPassword"
             :rules="$rules.passwordEasy"
             :maxlength="20"
-            @input="()=>{rulesOn=false}"
-            @keyup.enter="signupLogin"
+            @keyup.enter="joinLogin"
             autocomplete="password"
           />
           
           <h4>비밀번호 확인<v-icon v-if="pw2Valid" class="validation-icon">mdi-check-circle</v-icon></h4>
           <v-text-field
-            id="signup-password-confirm"
+            id="join-password-confirm"
             type="password"
             placeholder="비밀번호 확인"
-            v-bind="signupAttrs"
-            v-model="signupPasswordconfirm"
+            v-bind="joinAttrs"
+            v-model="joinPasswordconfirm"
             :maxlength="20"
-            :rules="[value => value == signupPassword || '비밀번호가 일치하지 않습니다.']"
-            @input="()=>{rulesOn=false}"
-            @keyup.enter="signupLogin"
+            :rules="[value => value == joinPassword || '비밀번호가 일치하지 않습니다.']"
+            @keyup.enter="joinLogin"
             autocomplete="password-confirm"
           />
         </div>
         
-        <div v-if="signUpInputList.includes('nickname')">
+        <div v-if="joinInputList.includes('nickname')">
           <h4>닉네임<v-icon v-if="nicknameValid" class="validation-icon">mdi-check-circle</v-icon></h4>
           <v-text-field
-            id="signup-nickname"
+            id="join-nickname"
             placeholder="닉네임"
-            v-bind="signupAttrs"
+            v-bind="joinAttrs"
             v-model="userName"
             :rules="$rules.nickname"
             :maxlength="50"
-            @input="()=>{rulesOn=false}"
-            @keyup.enter="signupLogin"
+            @keyup.enter="joinLogin"
           />
         </div>
         
-        <div v-if="signUpInputList.includes('captcha')">
+        <div v-if="joinInputList.includes('captcha')">
           <h4>자동 가입 방지 문자</h4>
           <v-row no-gutters class="justify-space-around align-center mt-4 mb-4">
             <v-col cols="6" sm="5" style="background-color: white; padding: 5px; padding-top: 10px; border-radius: 5px; min-width: 140px;" justify="center" align="center">
@@ -226,7 +220,7 @@
             </v-col>
             <v-col cols="7" sm="4">
               <v-text-field
-                class="signup-captcha"
+                class="join-captcha"
                 type="text"
                 placeholder="문자 입력"
                 v-model="captchaInputValue"
@@ -240,7 +234,7 @@
           </v-row>
         </div>
       </v-form>
-        
+      <p v-if="errorMsg" class="text-red text-subtitle-2 pa-2">{{errorMsg}}</p>
       <v-btn
         v-if="joinIndex === 0"
         v-bind="actionBtnAttrs"
@@ -254,7 +248,7 @@
       <v-btn
         v-else
         v-bind="actionBtnAttrs"
-        @click="signupLogin"
+        @click="joinLogin"
         :loading="loadingAuth"
         class="mb-4"
       >
@@ -263,13 +257,13 @@
           
       <v-row no-gutters class="justify-center">
         <!-- <v-btn @click="$notify('hello')">TEST</v-btn> -->
-        <div class="text-center">이미 계정이 있으신가요? <a @click="loginActiveAction">로그인</a></div>
+        <div class="text-center">이미 계정이 있으신가요? <a @click="loadLoginSheet">로그인</a></div>
       </v-row>
     </v-sheet>
 
     <!-- 본인 확인(이메일 전송) 안내 -->
-    <v-sheet v-if="validActive" width="100%">
-      <h2 v-if="validType === 'signup'">이메일 인증</h2>
+    <v-sheet v-if="sheetType==='email-confirm'" width="100%">
+      <h2 v-if="validType === 'join'">이메일 인증</h2>
       <h2 v-if="validType === 'findPW'">비밀번호 초기화</h2>
       
       <v-row
@@ -281,7 +275,7 @@
       </v-row> 
 
       <v-row class="mx-1 my-4">
-        <span v-if="validType === 'signup'">
+        <span v-if="validType === 'join'">
           해당 이메일로 인증 메일이 전송되었습니다.
           발송시간으로 부터 2시간 이내에 인증을 완료해주세요.
         </span>
@@ -292,17 +286,16 @@
       </v-row>
       
       <v-btn
-        v-if="validType === 'signup'"
         v-bind="actionBtnAttrs"
         :loading="loadingAuth"
-        @click="retryEmailSend(validEmailAddress)"
+        @click="retryEmailSend"
       >이메일 재전송
       </v-btn>
-      <a @click="loginActiveAction" class="mt-4 d-block text-center">로그인</a>
+      <a @click="loadLoginSheet" class="mt-4 d-block text-center">로그인</a>
     </v-sheet>
     
     <!-- 비밀번호 찾기 -->
-    <v-sheet v-if="findPWActive" color="transparent" width="100%" class="pa-3">
+    <v-sheet v-if="sheetType === 'find-pw'" color="transparent" width="100%" class="pa-3">
       <h2>비밀번호 찾기</h2>
       <p>비밀번호를 찾고자 하는 이메일을 입력해 주세요.</p>
       <v-text-field 
@@ -312,21 +305,22 @@
         prepend-inner-icon="mdi-email-outline"
         v-model="email"
         @keyup.enter="findPW"       
-        class="my-10"
+        class="mt-10"
         hide-details
         single-line
         variant="outlined"
         density="comfortable"
-      />         
+      />
+      <p v-if="errorMsg" class="text-red text-subtitle-2 pa-2">{{errorMsg}}</p>
       <v-btn
         v-bind="actionBtnAttrs"
         @click="findPW"
         :loading="loadingAuth"
-        class="mb-2"
+        class="mb-2 mt-10"
       >
         비밀번호 찾기
       </v-btn>
-      <a @click="loginActiveAction" class="d-block text-center mt-4">로그인</a>
+      <a @click="loadLoginSheet" class="d-block text-center mt-4">로그인</a>
     </v-sheet>
   </v-container>
 </template>
@@ -368,34 +362,26 @@ export default {
         required: true,
       }]
     },
-    signUpInputList: {
+    joinInputList: {
       type: Array,
       default: () => ['email', 'password', 'nickname']
     }
   },
   data: function(){
     return {
-      signupFormValid: false,
-      emailFirstError: false,
-      // privacy: privacy,
-      // policy: policy,
+      sheetType: 'login',
       agreementExpandItem: '',
       loadingAuth: false,
       checkedAgreement: [],
-      check_fourteen:false,
-      check_privacy:false,
-      check_policy:false,
       validEmailAddress:'se5nghee@naver.com',
       email:'',
       password:'',
+      errorMsg: '',
       loginLockCount: 5,
       loginLockTime: 1000*60*10, // 10분
       captchaImgSrc: '',
       captchaText: '',
       captchaInputValue: '',
-      // textFieldOptions: {
-      //   color: this.color,
-      // },
       loginAttrs: {
         rounded:false,
         autofocus:true,
@@ -405,7 +391,7 @@ export default {
         singleLine: this.textFieldSingleLine,
         hideDetails: this.textFieldSingleLine
       },
-      signupAttrs: {
+      joinAttrs: {
         rounded:false,
         autofocus:true,
         variant: 'outlined',
@@ -419,68 +405,40 @@ export default {
         color: this.mainColor,
         block: true,
       },
-      rulesOn: false,
-      loginActive:true,
-      signupEmailFront:'',
-      signupEmailBackSelect:'선택해주세요.',
-      signupEmailBack:'',
-      signupPassword:'',
-      signupPasswordconfirm:'',
+      joinEmailFront:'',
+      joinEmailBackSelect:'선택해주세요.',
+      joinEmailBack:'',
+      joinPassword:'',
+      joinPasswordconfirm:'',
       userName:'',
-      joinActive:false,
       joinIndex: 0,
-      validActive:false,
-      findPWActive: false,
-      validType: 'signup',
+      validType: 'join',
     }
   },
   watch:{
-    fullAgreement(val){
-      console.log('fullAgreement : ', val)
-    },
-    checkedAgreement(val){
-      console.log('checkedAgreement : ', val)
-    },
-    emailFirstError(val){
-      console.log('emailFirstError : ', val)
-    },
-    signupFormValid(val){
-      console.log('signupFormValid : ', val)
-    }
-    // signupEmailBack(val) {
-    //   console.log('back value : ', val)
-    // },
-    // signupEmailBackSelect(val) {
-    //   console.log('select value : ', val)
-    // }
   },
   computed: {
     fullAgreement() {
       return this.checkedAgreement.length === this.agreementList.length
     },
-    signupEmail() {
-      return this.signupEmailFront + '@' + this.signupEmailBack
+    joinEmail() {
+      return this.joinEmailFront + '@' + this.joinEmailBack
     },
     emailValid(){
-      return this.$regular.email(this.signupEmailFront + '@' + this.signupEmailBack)
+      return this.$regular.email(this.joinEmailFront + '@' + this.joinEmailBack)
     },
     pwValid(){
-      return this.$regular.passwordEasy(this.signupPassword)
+      return this.$regular.passwordEasy(this.joinPassword)
     },
     pw2Valid(){
-      return this.$regular.passwordEasy(this.signupPassword)
-        && this.signupPasswordconfirm === this.signupPassword
+      return this.$regular.passwordEasy(this.joinPassword)
+        && this.joinPasswordconfirm === this.joinPassword
     },
     nicknameValid(){
-      return this.$regular.koEnOnly(this.userName)
+      return this.$regular.koEnNumOnly(this.userName)
     }
   },
   methods:{
-    test(e){
-      console.log('select changed : ', e)
-      
-      // e === '직접 입력' ? signupEmailBack = '' : signupEmailBack = e
-    },
     clickFullAgreement() {
       if(this.fullAgreement) {
         this.checkedAgreement = []
@@ -488,121 +446,49 @@ export default {
         this.checkedAgreement = this.agreementList.map(item => item.key)
       }
     },
-    retryEmailSend(email) {
-      this.loadingAuth = true
-      this.$axios.post('/auth/validate/email/' + email)
-      .then(()=>{
-        this.$snotify.success('인증 메일을 성공적으로 전송하였습니다.')
-      })
-      .catch(()=>{
-        this.$snotify.error('인증 메일 전송에 실패하였습니다.')
-      })
-      .finally(()=>{
-        this.loadingAuth = false
-      })
+    retryEmailSend(){
+      console.log('retryEmailSend')
     },
-    // Google 로그인 구현
-    googleOAuth2Login(){
+    
+    // Google 로그인
+    async googleOAuth2Login(){
       console.log('google login')
-      
-      // this.$auth.loginWith('google')
-      // .then((res) => {
-      //   console.log('google' + res);
-      // })
-      // .catch(err=>{
-      //   console.log(err)
-      // })
     },
-    // Naver 로그인 구현
+    // Naver 로그인
     async naverOAuth2Login(){
       console.log('naver login')
-      // const naverLogin = new naver.LoginWithNaverId({
-      //   clientId: '41uHpiQYu16IEowvEEQy',
-      //   callbackUrl: `${window.location.origin}`,
-      //   isPopup: true,
-      //   callbackHandle: true
-      // });
-      // naverLogin.init();
-      
-
-      // await naverLogin.getLoginStatus((status)=>{
-      //   if(status){
-      //       const token = naverLogin.accessToken.accessToken
-      //       const url = '/auth/naver-login'
-      //       this.$axios.post(url, {
-      //         token : token
-      //       })
-      //       .then((res) => {
-      //         this.$store.state.auth.user = res.data
-      //         let existence = false
-      //         if(this.$store.state.auth.user.body.organizations.length > 0){
-      //           existence = true            
-      //         }
-      //         if(existence === true){
-      //           this.$auth.$storage.setUniversal('_token.local', res.data.body.accessToken)
-      //           this.$auth.$storage.setUniversal('_refresh_token.local', res.data.body.refreshToken)
-
-      //           if(this.$auth.user.body.email !== naverLogin.user.email){
-      //             this.$store.commit('setOrganizationId', this.$auth.$state.user.body.organizations[0].orgId)
-      //             this.$axios.defaults.headers.common['orgId'] = this.$auth.$state.user.body.organizations[0].orgId
-      //           }else{
-      //             if(this.$store.state.keepOrganizationId !== null){
-      //               this.$store.commit('setOrganizationId', this.$store.state.keepOrganizationId)
-      //               this.$axios.defaults.headers.common['orgId'] = this.$store.state.keepOrganizationId
-      //             }else{
-      //               this.$store.commit('setOrganizationId', this.$auth.$state.user.body.organizations[0].orgId)
-      //               this.$axios.defaults.headers.common['orgId'] = this.$auth.$state.user.body.organizations[0].orgId
-      //             }
-      //           }
-      //         }
-      //         this.$store.state.auth.loggedIn = true
-      //         this.$store.state.loginDialog = false
-      //       })
-      //       .catch((err) => {
-      //         console.log(err)
-      //       })
-      //   }else{
-      //       naverLogin.reprompt();
-      //       return 
-      //     }
-      //   })
     },
     
     kakaoOAuth2Login(){
       console.log('kakao login')
     },
     
-    //로그인 구현
+    // 로그인
     async userLogin() {
       let userData={
         username:this.email,
         password:this.password
       }
       
-      this.rulesOn = true;
+      // 입력값 확인 
+      if(this.email.length < 1){
+        this.errorMsg = '이메일을 입력하세요.'
+        document.getElementById('login-email-input').focus()
+        return 
+      } else if(this.password.length < 1) {
+        this.errorMsg = '비밀번호를 입력하세요.'
+        document.getElementById('login-password-input').focus()
+        return
+      }
       
-      
-      // 입력값이 올바르지 않을경우 
-      // if(this.email.length < 1){
-      //   document.getElementById('loginInput1').focus()
-      //   return 
-      // }else if(!this.$regular.emailPattern(this.email)){
-      //   console.log('이메일 형식 오류')
-      //   document.getElementById('loginInput1').focus()
-      //   return
-      // } else if(this.password.length < 1) {
-      //   document.getElementById('loginInput2').focus()
-      //   return
-      // }      
+      this.errorMsg = ''
       
       if(this.$store.state.loginLockStatus.captchaActive && !this.checkCaptcha()){
         return
       }
 
       this.loadingAuth = true
-      // else if(this.$regular.passwordEasy(this.password)){
-      //   return
-      // }
+
 
       if(userData.username !== 'se5nghee@naver.com' || userData.password !== 'aa'){
         this.updateLoginLockStatus()
@@ -610,50 +496,6 @@ export default {
         this.$store.commit('setLoginLockStatus', {captchaActive: false, latestLoginTryDate: '', loginFailCount: 0})
       }
 
-      // try {
-      //   await this.$auth.loginWith('local', { data: userData })
-      //   .then((res) => {
-      //     //this.$cookiz.set('auth._refresh_token.local', res.data.refreshToken)
-      //       this.$auth.$storage.setUniversal('_refresh_token.local', res.data.refreshToken)
-      //       this.$store.commit('setLoginLockStatus', {captchaActive: false, latestLoginTryDate: '', loginFailCount: 0})
-            
-      //       let existence = false
-      //       if(this.$auth.$state.user.body.organizations.length > 0){
-      //         existence = true            
-      //       }
-
-      //       if(existence === true){
-      //         if(this.$auth.user.body.email !== this.email){
-      //           this.$store.commit('setOrganizationId', this.$auth.$state.user.body.organizations[0].orgId)
-      //           this.$axios.defaults.headers.common['orgId'] = this.$auth.$state.user.body.organizations[0].orgId
-      //         }else{
-      //           if(this.$store.state.keepOrganizationId !== null){
-      //             this.$store.commit('setOrganizationId', this.$store.state.keepOrganizationId)
-      //             this.$axios.defaults.headers.common['orgId'] = this.$store.state.keepOrganizationId
-      //           }else{
-      //             this.$store.commit('setOrganizationId', this.$auth.$state.user.body.organizations[0].orgId)
-      //             this.$axios.defaults.headers.common['orgId'] = this.$auth.$state.user.body.organizations[0].orgId
-      //           }
-      //         }
-      //       }
-      //     this.$store.state.loginDialog = false
-      //   }).catch((e) => {
-          
-      //     let errorCode = e.response.data.body !== null && e.response.data.body ? e.response.data.body.code : ''
-      //     //이메일 미인증
-      //     if(errorCode && errorCode === 'A005') {
-      //       this.validType='signup'
-      //       this.validActiveAction(this.email)
-      //     } else {
-      //       this.updateLoginLockStatus()
-      //       alert("아이디와 비밀번호를 확인하세요.")
-      //       document.getElementById('loginInput1').focus()
-      //     }
-      //   })
-      // } catch (err){
-      //   console.log(err)
-      //   this.loadingAuth = false
-      // }
       this.loadingAuth = false
     },
     
@@ -739,9 +581,11 @@ export default {
       if (this.captchaText === this.captchaInputValue) {
         return true
       } else {
-        alert("자동 입력 방지 문자를 잘못 입력했습니다.")
+        alert("자동 입력 방지 문자를 다시 입력해주세요.")
         this.generateCaptcha()
         this.captchaInputValue = ''
+        document.getElementById('login-captcha-input').focus()
+
         return false
       }
     },
@@ -779,260 +623,92 @@ export default {
       this.$store.commit('setLoginLockStatus', {captchaActive, latestLoginTryDate, loginFailCount})
     },
     
-    //회원가입 구현
-    async signupLogin(){      
-      
-      this.rulesOn = true;
+    // 회원가입
+    async joinLogin(){      
       
       // 입력값 확인
-      if(this.userName.length < 1){
-        this.$snotify.error('이름을 입력하세요.')
-        document.getElementById('signupInput1').focus()
+      if(!this.emailValid){
+        this.errorMsg = '이메일을 확인하세요.'
+        document.getElementById('join-email-front').focus()
         return 
-      }else if(!this.$regular.koEnOnly(this.userName)){
-        this.$snotify.error('한글, 영문만 입력해주세요.')
-        document.getElementById('signupInput1').focus()
+      } else if(!this.pwValid) {
+        this.errorMsg = '비밀번호를 확인하세요.'
+        document.getElementById('join-password').focus()
+        return
+      } else if(!this.pw2Valid) {
+        this.errorMsg = '비밀번호를 확인하세요.'
+        document.getElementById('join-password-confirm').focus()
+        return
+      } else if(!this.nicknameValid) {
+        this.errorMsg = '닉네임을 확인하세요.'
+        document.getElementById('join-nickname').focus()
         return
       }
-      else if(this.signupEmail.length < 1 || !this.$regular.emailPattern(this.signupEmail)){
-        this.$snotify.error('이메일을 올바르게 입력하세요.')
-        document.getElementById('signupInput2').focus()
-        return 
-      }else if(!this.$regular.passwordEasy(this.signupPassword)){
-        this.$snotify.error('영문·숫자를 포함하여 6~20자 이내로 입력해주세요.')
-        document.getElementById('signupInput3').focus()
-        return 
-      }else if(this.signupPassword.length < 1 || this.signupPasswordconfirm.length ===0){
-        this.$snotify.error('비밀번호를 입력하세요.')
-        document.getElementById('signupInput3').focus()
-        return 
-      }else if(this.signupPassword !== this.signupPasswordconfirm){
-        this.$snotify.error('비밀번호가 일치하지 않습니다.')
-        this.signupPasswordconfirm = '';
-        document.getElementById('signupInput3').focus()
-        return 
+      
+      if(!this.checkCaptcha()){
+        return
       }
-
-      // if(!this.checkCaptcha()){
-      //   return
-      // }
-
-      this.loadingAuth = true
-
-      // let emailDuplicated = await this.checkEmailDuplicated()
-      // if(!emailDuplicated) {
-      //   this.loadingAuth = false
-      //   return
-      // }
-
-
-      // let signUpData = {
-      //   email : this.signupEmail,
-      //   password:this.signupPassword,
-      //   username:this.userName
-      // }
-
-      // await this.$axios.post('auth/signup', signUpData)
-      // .then(()=>{
-      //   this.$snotify.success('회원가입 완료')
-      //   this.validType = 'signup'
-      //   this.validActiveAction(this.signupEmail)
-        
-      // }) 
-      // .catch((err)=>{
-      //   console.log(err)
-      // })
-      this.loadingAuth = false
-
+      
+      this.$emit('join', this.email)
     },
-    //이메일 중복 확인
-    async checkEmailDuplicated(){
-      if(!this.$regular.emailPattern(this.signupEmail)){
-        this.$snotify.error('이메일을 올바르게 입력하세요')
-        return false
-      }
-
-      if(this.signupEmail === '' ){
-        this.$snotify.error('이메일을 입력하세요')
-        return false
-      }
-      let result = false
-      await this.$axios.get('auth/user/email-validation/'+ this.signupEmail)
-      .then((res) => {
-        result = res.data.body === 'OK'
-      })
-      .catch((err)=>{
-        console.log(err)
-      })
-
-      if(result){
-        return true;
-      }else{
-        this.$snotify.error('이미 사용중인 이메일입니다.')
-        this.signupEmail = '';
-        return false;
-      }
-    },
-    // 비밀번호 찾기 구현
+    // 비밀번호 찾기
     async findPW(){
-      
-      this.rulesOn = true;
-      
-      if(this.email.length < 1 || !this.$regular.emailPattern(this.email)){
-        this.$snotify.error('이메일을 올바르게 입력하세요.')
+      if(this.email.length < 1 || !this.$regular.email(this.email)){
+        this.errorMsg = '이메일을 올바르게 입력하세요.'
         return 
       }
-      const email = {
-        to:this.email,
-        subject: '[VRIDGE] 비밀번호를 재설정 해주세요.',
-        // contents: this.generateResetPwdTemplate()
-      }
-
-      this.loadingAuth = true
-      await this.$axios.post('auth/mail', email)
-      .then(() => {
-        this.validType = 'findPW'
-        this.validActiveAction(this.email)
-      })
-      .catch(e=>{
-        let errorCode = e.response.data !== null && e.response.data ? e.response.data.error : ''
-        //이메일 미인증
-        if(errorCode && errorCode === 'A007') {
-          alert('존재하지 않는 이메일 주소입니다.')
-        } else {
-          alert(this.$t('setting_error_has_occurred_server'))
-        }
-      })
-      this.loadingAuth = false
-    },
-
-    generateResetPwdTemplate() {
-      // const bcrypt = require('bcrypt-nodejs')
-      // let salt = bcrypt.genSaltSync(10);
-      // let secretKey = bcrypt.hashSync('vazil', salt)
       
-      // let key = secretKey + ',' + this.email + ',' + new Date().toISOString()
-      // key = window.btoa(key)
-      // const resetUrl = window.location.protocol + "//" + window.location.host + '/login/reset/' + key
-      // return "<p>비밀번호 초기화를 위해 아래 버튼을 눌러 변경 절차를 완료해 주세요.</p>"
-      //       + "<br/>"
-      //       + "<p style='margin-bottom: 20px;'>감사합니다.</p>"
-      //       + "<br/>"
-      //       + "<br/>"
-      //       + "<div style='width:100%; margin:0 auto; text-align: center'>"
-      //       + "    <div style='font-size:16px; margin:0 auto; border-radius: 5px; padding: 10px 20px 10px 20px; background-color: #2e67af; display: inline-block;'>"
-      //       + "        <a target='_blank' href='"+ resetUrl +"' style='cursor:pointer; color:white; text-decoration: none; font-weight: bold;'>"
-      //       + "            비밀번호 변경하기"
-      //       + "        </a>"
-      //       + "    </div>"
-      //       + "    <div style='color:#999; font-size:12px; margin-top:12px;'>※ 해당 링크는 2시간동안 유효합니다.</div>"
-      //       + "</div>"
+      this.errorMsg = ''
+      this.$emit('findPW', this.email)
+      this.validType = 'findPW'
     },
-    // 회원가입 팝업창 활성화
-    joinActiveAction(){
-      this.signupEmailFront ='',
-      this.signupEmailBack ='',
-      this.signupPassword='',    
-      this.signupPasswordconfirm = '',
+
+    // 회원가입 sheet 활성화
+    loadJoinSheet(){
+      this.joinEmailFront ='',
+      this.joinEmailBack ='',
+      this.joinPassword='',    
+      this.joinPasswordconfirm = '',
       this.userName=''
-      this.rulesOn = false
       this.captchaInputValue = ''
-
+      this.errorMsg = ''
       this.joinIndex = 0
-      this.check_fourteen = false
-      this.check_privacy = false
-      this.check_policy = false
-      
-      setTimeout(() => {
-        this.loginActive = false
-      }, 100);
-      setTimeout(() => {
-        this.joinActive = true
-        this.validActive = false
-      }, 200);
-
+      this.sheetType = 'join'
     },
 
-    // 로그인 팝업창 활성화
-    loginActiveAction(){
+    // 로그인 sheet 활성화
+    loadLoginSheet(){
       this.email = '';
       this.password = '';
-      this.rulesOn = false
       this.captchaInputValue = ''
-      
-      setTimeout(() => {
-        this.joinActive = false
-        this.findPWActive = false
-      }, 100);
-      setTimeout(() => {
-        this.loginActive = true
-        this.validActive = false
-      }, 200);
+      this.errorMsg = ''
+      this.sheetType = 'login'
     },
 
-    // 검증 팝업창 활성화
-    validActiveAction(email){
+    // 이메일 전송 완료 sheet 활성화
+    loadEmailConfirmSheet(email){
       this.validEmailAddress = email
       this.email = '';
       this.password = '';
-      setTimeout(() => {
-        this.loginActive = false
-        this.joinActive = false
-        this.findPWActive = false
-      }, 100);
-      setTimeout(() => {
-        
-        this.validActive = true
-      }, 200);
+      this.errorMsg = ''
+      this.sheetType = 'email-confirm'
     },
     
-    // 비밀번호 찾기 팝업창 활성화
-    findPWActiveAction(){
+    // 비밀번호 찾기 sheet 활성화
+    loadFindPWSheet(){
       this.email = '';
-      setTimeout(() => {
-        this.loginActive = false
-      }, 100);
-      setTimeout(() => {
-        this.findPWActive = true
-      }, 200);
+      this.errorMsg = ''
+      this.sheetType = 'find-pw'
     },
-
-    openPage(url) {
-      let route = this.$router.resolve({path: url});
-      window.open(route.href, '_blank');
-    },
-
-  },
-  created(){
-    setTimeout(() => {
-      // this.loginActive = true
-      // this.loginActive = false
-      // this.joinActive = true
-      // this.joinIndex = 1
-    
-    }, 100);
   },
   mounted(){
     this.checkLoginLockStatus()
     this.generateCaptcha()
-    // this.$notify({
-    //   position: 'top center'
-    // })
   },
 }
 </script>
 
 <style lang="scss">
-.login-container {
-  // position: relative;
-  // height:100%;
-  // max-height: 100vh;
-  // width:100%;
-  // margin:0 auto !important;
-  // padding:0 !important;
-  // background-color: #fff;
-}
-
 .login-column{
   display: flex;
   justify-content: center;
@@ -1171,20 +847,20 @@ export default {
       }
     }
     
-    &.signup-sheet {
-      .signup-form {
+    &.join-sheet {
+      .join-form {
         .v-text-field {
           margin-bottom: 24px;
           
           @media screen and (max-width: 600px) {
-            &.signup-email-front {
+            &.join-email-front {
               margin-bottom: 4px;
               // background-color: red !important;
             }
           }
 
           
-          &.signup-captcha {
+          &.join-captcha {
             margin-bottom: 0;
           }
           

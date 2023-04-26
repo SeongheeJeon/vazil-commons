@@ -1,6 +1,8 @@
 <template>
   <div>
     <!-- <span class="mr-4">{{$t('홈 화면')}}</span> -->
+    
+    
     <!-- <VazilDialog
       ref="testDialog"
       v-bind="testDialogProps"
@@ -37,6 +39,7 @@
       </template>
     </VazilDialog> -->
     
+    
     <!-- <VazilPagination
       type="omitted"
       color="red"
@@ -60,7 +63,13 @@
       @set-page="setPage"
     /> -->
     
-    <VazilLogin v-bind="vazilLoginProps" />
+    <VazilLogin
+      ref="vazilLoginTest"
+      v-bind="vazilLoginProps"
+      @login="loginEvent"
+      @join="joinEvent"
+      @findPW="findPWEvent"
+    />
   </div>
 </template>
 
@@ -89,7 +98,7 @@ export default {
       privacy: privacy,
       policy: policy,
       vazilLoginProps: {
-        bgColor: "beige",
+        bgColor: "#c398ff",
         mainColor: "red",
         class: "mt-4",
         width: "500",
@@ -112,7 +121,7 @@ export default {
             required: true,
           }
         ],
-        signUpInputList: ['email', 'password', 'nickname', 'captcha'],
+        joinInputList: ['email', 'password', 'nickname', 'captcha'],
       }
     }
   },
@@ -126,7 +135,22 @@ export default {
     },
     setPage(){
       console.log('setPage')
-    }
+    },
+    loginEvent(){
+      console.log('loginEvent')
+    },
+    joinEvent(){
+      console.log('joinEvent')
+    },
+    findPWEvent(email){
+      console.log('findPWEvent, email : ', email)
+      
+      // todo : 메일 전송 구현
+      // 메일 전송 성공 시 (메일 전송 완료 sheet 로드)
+        // this.$refs.vazilLoginTest.loadEmailConfirmSheet(email)
+      // 존재하지 않는 이메일이거나 메일 전송 실패 시
+        // window.alert('메일 전송에 실패하였습니다.')
+    },
   }
 }
 </script>
