@@ -53,7 +53,7 @@
           <div><span class="text-subtitle-2">SNS 간편 로그인/회원가입</span></div>
           <div class="mb-7 mt-1 sns-btns">
             <v-btn v-if="snsLoginList.includes('naver')" @click="naverOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
-              <img :src="require(`@/assets/image/naver_rac.png`)"/>
+              <img :src="require(`@/assets/image/naver.png`)"/>
             </v-btn>
             <v-btn v-if="snsLoginList.includes('kakao')"  @click="kakaoOAuth2Login" :disabled="loadingAuth" variant="plain" icon>
               <img :src="require(`@/assets/image/kakao.png`)">
@@ -465,10 +465,10 @@ export default {
     
     // 로그인
     async userLogin() {
-      let userData={
-        username:this.email,
-        password:this.password
-      }
+      // let userData={
+      //   username:this.email,
+      //   password:this.password
+      // }
       
       // 입력값 확인 
       if(this.email.length < 1){
@@ -490,12 +490,16 @@ export default {
       this.loadingAuth = true
 
 
-      if(userData.username !== 'se5nghee@naver.com' || userData.password !== 'aa'){
-        this.updateLoginLockStatus()
-      } else {
-        this.$store.commit('setLoginLockStatus', {captchaActive: false, latestLoginTryDate: '', loginFailCount: 0})
-      }
+      // 로그인 실패할경우 lockStatus 업데이트
+      // if(userData.username !== 'se5nghee@naver.com' || userData.password !== 'aa'){
+      //   this.updateLoginLockStatus()
+      // } else { // 성공할 경우 lockStatus 초기화
+      //   this.$store.commit('setLoginLockStatus', {captchaActive: false, latestLoginTryDate: '', loginFailCount: 0})
+      // }
 
+      this.$emit('login', this.email)
+
+      
       this.loadingAuth = false
     },
     
